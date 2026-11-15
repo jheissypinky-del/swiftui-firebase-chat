@@ -9,9 +9,19 @@ import SwiftUI
 
 @main
 struct ChatDemoApp: App {
+    @State private var isAuthenticated = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            Group {
+                if isAuthenticated {
+                    ChatListView()
+                } else {
+                    LoginView(onAuthenticated: {
+                        isAuthenticated = true
+                    })
+                }
+            }
         }
     }
 }
