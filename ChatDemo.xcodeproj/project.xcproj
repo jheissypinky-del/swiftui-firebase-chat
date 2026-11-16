@@ -10,6 +10,15 @@
       "Base",
     ],
   },
+  "packages": [
+    {
+      "kind": "remote",
+      "repository": "https://github.com/firebase/firebase-ios-sdk",
+      "version": {
+        "up-to-next-major-version": "13.2.0",
+      },
+    },
+  ],
   "files": [
     { "kind": "folder", "path": "ChatDemo", "target-membership": [ "ChatDemo" ] },
     { "kind": "folder", "path": "ChatDemoTests", "target-membership": [ "ChatDemoTests" ] },
@@ -35,10 +44,18 @@
         "frameworks",
         "resources",
       ],
+      "package-product-members": [
+        {
+          "package": "firebase-ios-sdk",
+          "product-name": "FirebaseAuth",
+          "build-phase": { "build-phase": "frameworks" },
+        },
+      ],
       "build-settings": {
         "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
         "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
         "ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS": "YES",
+        "CODE_SIGN_ENTITLEMENTS": "ChatDemo/ChatDemo.entitlements",
         "CODE_SIGN_STYLE": "Automatic",
         "CURRENT_PROJECT_VERSION": "1",
         "DEVELOPMENT_TEAM": "4Y52TP2DN5",

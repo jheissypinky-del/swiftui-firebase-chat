@@ -6,20 +6,26 @@
 //
 
 import SwiftUI
+import FirebaseCore
 
 @main
 struct ChatDemoApp: App {
-    @State private var isAuthenticated = false
+    // Inicializar Firebase al lanzar la app
+    init() {
+        FirebaseApp.configure()
+    }
+
+    @StateObject private var authViewModel = AuthenticationViewModel()
 
     var body: some Scene {
         WindowGroup {
             Group {
-                if isAuthenticated {
+                if authViewModel.isAuthenticated {
                     ChatListView()
+                        .environmentObject(authViewModel)
                 } else {
-                    LoginView(onAuthenticated: {
-                        isAuthenticated = true
-                    })
+                    LoginView()
+                        .environmentObject(authViewModel)
                 }
             }
         }
