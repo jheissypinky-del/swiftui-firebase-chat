@@ -92,3 +92,10 @@ Comparativa/
 
 # Design source files (PNGs)
 *.png
+
+# Firebase configuration (sensitive - never commit)
+GoogleService-Info.plist
+GoogleService-Info-*.plist
+
+# Xcode entitlements (may contain sensitive config)
+*.entitlements
