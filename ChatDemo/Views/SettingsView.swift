@@ -73,12 +73,12 @@ struct SettingsView: View {
                                         .foregroundStyle(Color.auraError)
                                     Text("Salir de tu cuenta de Aura Chat")
                                         .font(.auraLabelSM)
-                                        .foregroundStyle(.auraOutline)
+                                        .foregroundStyle(Color.auraOutline)
                                 }
                                 Spacer(minLength: 0)
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 18))
-                                    .foregroundStyle(.auraOutlineVariant)
+                                    .foregroundStyle(Color.auraOutlineVariant)
                             }
                             .padding(.vertical, 18)
                             .padding(.horizontal, .auraSpaceLG)
