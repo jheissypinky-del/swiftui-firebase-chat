@@ -11,6 +11,7 @@ import SwiftUI
 // MARK: - View
 
 struct SettingsView: View {
+    @EnvironmentObject private var authViewModel: AuthenticationViewModel
     @State private var showingQRModal = false
     @State private var themeSelected: ThemeMode = .light
     @State private var storageUsed = 28 // porcentaje del anillo
@@ -51,6 +52,39 @@ struct SettingsView: View {
                             subtitle: "Última vez, fotos de perfil, bloqueo biométrico",
                             trailing: .badge("FaceID activo", icon: "fingerprint")
                         )
+                        
+                        Divider().padding(.leading, 76)
+                        
+                        Button(action: {
+                            Task {
+                                await authViewModel.signOut()
+                            }
+                        }) {
+                            HStack(spacing: .auraSpaceMD) {
+                                Circle()
+                                    .fill(Color.auraErrorContainer)
+                                    .frame(width: 36, height: 36)
+                                    .overlay(Image(systemName: "arrow.right.to.circle.fill").font(.system(size: 19)).foregroundStyle(.auraError))
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Cerrar sesión")
+                                        .font(.auraBodyMD)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.auraError)
+                                    Text("Salir de tu cuenta de Aura Chat")
+                                        .font(.auraLabelSM)
+                                        .foregroundStyle(.auraOutline)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(.auraOutlineVariant)
+                            }
+                            .padding(.vertical, 18)
+                            .padding(.horizontal, .auraSpaceLG)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
 
                     // Grupo 2: Preferencias de Chat

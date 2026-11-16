@@ -35,6 +35,7 @@ struct Story: Identifiable {
 // MARK: - View
 
 struct ChatListView: View {
+    @EnvironmentObject private var authViewModel: AuthenticationViewModel
     @State private var searchText = ""
     @State private var selectedFilter: Filter = .all
     @State private var path = NavigationPath()
@@ -167,6 +168,12 @@ struct ChatListView: View {
                         .fontWeight(.semibold)
                         .foregroundStyle(Color.auraOnSurface)
                         .lineLimit(1)
+                    if let email = authViewModel.userSession?.email {
+                        Text(email)
+                            .font(.auraLabelSM)
+                            .foregroundStyle(Color.auraOnSurfaceVariant)
+                            .lineLimit(1)
+                    }
                 }
             }
 
