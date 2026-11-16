@@ -64,13 +64,13 @@ struct SettingsView: View {
                                 Circle()
                                     .fill(Color.auraError.opacity(0.15))
                                     .frame(width: 36, height: 36)
-                                    .overlay(Image(systemName: "arrow.right.to.circle.fill").font(.system(size: 19)).foregroundStyle(.auraError))
+                                    .overlay(Image(systemName: "arrow.right.to.circle.fill").font(.system(size: 19)).foregroundStyle(Color.auraError))
                                 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Cerrar sesión")
                                         .font(.auraBodyMD)
                                         .fontWeight(.semibold)
-                                        .foregroundStyle(.auraError)
+                                        .foregroundStyle(Color.auraError)
                                     Text("Salir de tu cuenta de Aura Chat")
                                         .font(.auraLabelSM)
                                         .foregroundStyle(.auraOutline)
