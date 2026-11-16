@@ -68,7 +68,7 @@ struct ChatConversationView: View {
                                     .id(message.id)
                             }
                             // Espacio inferior para que el último mensaje no quede detrás del input dock
-                            Color.clear.frame(height: 100)
+                            Color.clear.frame(height: 120)
                         }
                         .padding(.horizontal, 8)
                         .padding(.top, 8)
@@ -84,17 +84,17 @@ struct ChatConversationView: View {
                             scrollPosition.scrollTo(edge: .bottom)
                         }
                     }
-                    // El input dock se coloca en el área segura inferior, encima del tab bar
+                    // Input dock en el área segura inferior (encima del tab bar)
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         InputDock(
                             text: $messageText,
                             isFocused: $isInputFocused,
                             onSend: { sendMessage() }
                         )
-                        .background(Color.auraBackground)
                     }
                 }
             }
+            .frame(maxHeight: .infinity)
         }
         .navigationBarBackButtonHidden()
         .toolbar(.hidden, for: .navigationBar)
@@ -324,7 +324,10 @@ private struct InputDock: View {
     var body: some View {
         VStack(spacing: 0) {
             // Separador superior del dock
-            Rectangle().frame(height: 0.5).foregroundStyle(Color.black.opacity(0.08))
+            Rectangle()
+                .frame(height: 0.5)
+                .foregroundStyle(Color.black.opacity(0.08))
+                .frame(maxWidth: .infinity)
 
             HStack(spacing: 10) {
                 // Adjuntos
@@ -380,6 +383,7 @@ private struct InputDock: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
+            .frame(maxWidth: .infinity)
             .background(Color.auraGlassBar)
         }
     }
