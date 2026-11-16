@@ -14,6 +14,7 @@ import UIKit
 struct ProfileView: View {
     let contact: String
 
+    @EnvironmentObject private var authViewModel: AuthenticationViewModel
     @State private var notificationsOn = true
     @State private var expiry: Expiry = .sevenDays
     @State private var showingToast = false
@@ -425,6 +426,37 @@ struct ProfileView: View {
             actionRow(icon: "hand.raised.fill", iconColor: .auraError, title: "Bloquear a \(contact)", subtitle: "No podrá enviarte mensajes ni llamarte", destructive: true)
             Divider().padding(.leading, 76)
             settingsAppRow
+            Divider().padding(.leading, 76)
+            Button(action: {
+                Task {
+                    await authViewModel.signOut()
+                }
+            }) {
+                HStack(spacing: .auraSpaceMD) {
+                    Circle()
+                        .fill(Color.auraError.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                        .overlay(Image(systemName: "arrow.right.to.circle.fill").font(.system(size: 19)).foregroundStyle(.auraError))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Cerrar sesión")
+                            .font(.auraBodyMD)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.auraError)
+                        Text("Salir de tu cuenta de Aura Chat")
+                            .font(.auraLabelSM)
+                            .foregroundStyle(.auraOutline)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.auraOutlineVariant)
+                }
+                .padding(.vertical, 18)
+                .padding(.horizontal, .auraSpaceLG)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
         .background(Color.auraSurfaceContainerLowest)
         .clipShape(RoundedRectangle(cornerRadius: .auraRadiusCard, style: .continuous))

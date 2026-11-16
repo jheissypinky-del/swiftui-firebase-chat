@@ -62,7 +62,7 @@ struct SettingsView: View {
                         }) {
                             HStack(spacing: .auraSpaceMD) {
                                 Circle()
-                                    .fill(Color.auraErrorContainer)
+                                    .fill(Color.auraError.opacity(0.15))
                                     .frame(width: 36, height: 36)
                                     .overlay(Image(systemName: "arrow.right.to.circle.fill").font(.system(size: 19)).foregroundStyle(.auraError))
                                 
