@@ -59,7 +59,7 @@ struct ChatConversationView: View {
                 // Header de conversación
                 ConversationHeader(contact: contact, onGoToProfile: onGoToProfile)
 
-                // Lista de mensajes (con padding inferior para el input dock)
+                // Lista de mensajes con input dock anclado al área segura inferior
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 0) {
@@ -84,16 +84,15 @@ struct ChatConversationView: View {
                             scrollPosition.scrollTo(edge: .bottom)
                         }
                     }
-                }
-
-                // Input dock (barra de vidrio sobre el teclado, sobre el tab bar)
-                InputDock(
-                    text: $messageText,
-                    isFocused: $isInputFocused,
-                    onSend: { sendMessage() }
-                )
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    Color.clear.frame(height: 8) // pequeño margen sobre el indicador de inicio
+                    // El input dock se coloca en el área segura inferior, encima del tab bar
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        InputDock(
+                            text: $messageText,
+                            isFocused: $isInputFocused,
+                            onSend: { sendMessage() }
+                        )
+                        .background(Color.auraBackground)
+                    }
                 }
             }
         }
