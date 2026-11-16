@@ -4,26 +4,29 @@
 //
 //  Aura Chat — pantalla "Iniciar sesión".
 //  Traducida del código HTML de referencia (aura_chat_iniciar_sesion).
+//  Ahora usa Firebase Authentication para email/password.
 //
 
 import SwiftUI
 import LocalAuthentication
+import FirebaseAuth
 
 // MARK: - View
 
 struct LoginView: View {
-    var onAuthenticated: () -> Void = {}
-    @State private var authMode: AuthMode = .phone
-    @State private var phoneNumber = ""
+    @EnvironmentObject private var authViewModel: AuthenticationViewModel
+
+    @State private var authMode: AuthMode = .email
     @State private var email = ""
+    @State private var password = ""
+    @State private var isSignUpMode = false
     @State private var showingToast = false
     @State private var toastMessage = ""
     @State private var toastType: ToastType = .success
-    @State private var isAuthenticating = false
 
     enum AuthMode: String, CaseIterable, Identifiable {
-        case phone = "Teléfono"
         case email = "Correo"
+        case phone = "Teléfono"
 
         var id: String { rawValue }
     }
@@ -56,7 +59,7 @@ struct LoginView: View {
                 biometricsDivider
                     .frame(maxWidth: .infinity, alignment: .center)
                 Spacer()
-                
+
                 // Acciones rápidas (Apple ID / Face ID)
                 quickActions
 
@@ -81,6 +84,18 @@ struct LoginView: View {
             }
         }
         .tint(.auraPrimary)
+        // Mostrar errores de autenticación como toast
+        .onChange(of: authViewModel.authError) { _, newError in
+            if let error = newError {
+                showToast(error, type: .error)
+                authViewModel.clearError()
+            }
+        }
+        .onChange(of: authViewModel.isAuthenticated) { _, isAuthenticated in
+            if isAuthenticated {
+                showToast("Sesión iniciada correctamente", type: .success)
+            }
+        }
     }
 
     // MARK: - Subviews
@@ -188,7 +203,7 @@ struct LoginView: View {
                     .padding(.horizontal, 40)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical,10)
+            .padding(.vertical, 10)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 20)
@@ -196,7 +211,7 @@ struct LoginView: View {
 
     private var mainCard: some View {
         VStack(spacing: .auraSpaceLG) {
-            // Segment switcher Teléfono / Correo
+            // Segment switcher Correo / Teléfono
             HStack(spacing: 2) {
                 ForEach(AuthMode.allCases) { mode in
                     Button(action: { authMode = mode }) {
@@ -222,10 +237,10 @@ struct LoginView: View {
 
             // Área de inputs
             VStack(spacing: .auraSpaceSM) {
-                if authMode == .phone {
-                    phoneInputGroup
-                } else {
+                if authMode == .email {
                     emailInputGroup
+                } else {
+                    phoneInputGroup
                 }
 
                 // Hint dinámico
@@ -233,18 +248,20 @@ struct LoginView: View {
                     Image(systemName: "text.badge.checkmark")
                         .font(.system(size: 14))
                         .foregroundStyle(Color.auraPrimary)
-                    Text("Verificación instantánea por código seguro")
-                        .font(.auraLabelSM)
-                        .foregroundStyle(Color.auraOnSurfaceVariant)
+                    Text(authMode == .email
+                         ? "Inicia sesión con tu correo y contraseña"
+                         : "Verificación instantánea por código seguro")
+                    .font(.auraLabelSM)
+                    .foregroundStyle(Color.auraOnSurfaceVariant)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 12)
             }
 
-            // Botón primario Continuar
+            // Botón primario
             Button(action: submit) {
                 HStack(spacing: 8) {
-                    Text("Continuar")
+                    Text(isSignUpMode ? "Crear cuenta" : "Iniciar sesión")
                         .font(.auraHeadlineSM)
                         .fontWeight(.semibold)
                     Image(systemName: "arrow.forward")
@@ -256,11 +273,28 @@ struct LoginView: View {
                 .background(Color.auraPrimaryContainer)
                 .clipShape(Capsule())
                 .shadow(color: Color.auraPrimary.opacity(0.3), radius: 12, x: 0, y: 6)
-                .scaleEffect(isAuthenticating ? 0.98 : 1.0)
-                .animation(.easeInOut(duration: 0.15), value: isAuthenticating)
+                .scaleEffect(authViewModel.isAuthenticating ? 0.98 : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: authViewModel.isAuthenticating)
             }
             .buttonStyle(.plain)
-            .disabled(isAuthenticating)
+            .disabled(authViewModel.isAuthenticating)
+
+            // Toggle entre Iniciar sesión / Crear cuenta (solo email)
+            if authMode == .email {
+                Button(action: { isSignUpMode.toggle() }) {
+                    HStack(spacing: 4) {
+                        Text(isSignUpMode ? "¿Ya tienes cuenta?" : "¿No tienes cuenta?")
+                            .font(.auraLabelSM)
+                            .foregroundStyle(Color.auraOnSurfaceVariant)
+                        Text(isSignUpMode ? "Inicia sesión" : "Regístrate")
+                            .font(.auraLabelSM)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Color.auraPrimary)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.top, .auraSpaceXS)
+            }
         }
         .padding(.auraSpaceLG)
         .background(Color.auraSurfaceContainerLowest.opacity(0.92))
@@ -298,14 +332,41 @@ struct LoginView: View {
                 Image(systemName: "phone.fill")
                     .font(.system(size: 20))
                     .foregroundStyle(Color.auraOnSurfaceVariant)
-                TextField("55 1234 5678", text: $phoneNumber)
+                TextField("55 1234 5678", text: .constant(""))
+                    .font(.auraBodyLG)
+                    .foregroundStyle(Color.auraOnSurface.opacity(0.5))
+                    .disabled(true)
+                Text("Firebase Auth tel. requiere APNs + reCAPTCHA")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.auraError)
+                    .padding(.leading, 4)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 56)
+            .frame(maxWidth: .infinity)
+            .background(Color.auraSurfaceContainerLow.opacity(0.6))
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(Color.auraError.opacity(0.3), lineWidth: 0.5)
+            )
+        }
+    }
+
+    private var emailInputGroup: some View {
+        VStack(spacing: .auraSpaceSM) {
+            HStack(spacing: 8) {
+                Image(systemName: "envelope.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.auraOnSurfaceVariant)
+                TextField("tu@aura.chat", text: $email)
                     .font(.auraBodyLG)
                     .foregroundStyle(Color.auraOnSurface)
-                    .keyboardType(.phonePad)
+                    .keyboardType(.emailAddress)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
-                if !phoneNumber.isEmpty {
-                    Button(action: { phoneNumber = "" }) {
+                if !email.isEmpty {
+                    Button(action: { email = "" }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 16))
                             .foregroundStyle(Color.auraOutline)
@@ -316,46 +377,44 @@ struct LoginView: View {
             .padding(.horizontal, 12)
             .frame(height: 56)
             .frame(maxWidth: .infinity)
-            .background(phoneNumber.isEmpty ? Color.auraSurfaceContainerLow : Color.auraSurfaceContainerLowest)
+            .background(email.isEmpty ? Color.auraSurfaceContainerLow : Color.auraSurfaceContainerLowest)
             .clipShape(Capsule())
             .overlay(
                 Capsule()
-                    .stroke(Color.black.opacity(phoneNumber.isEmpty ? 0.06 : 0.10), lineWidth: 0.5)
+                    .stroke(Color.black.opacity(email.isEmpty ? 0.06 : 0.10), lineWidth: 0.5)
             )
-            .shadow(color: Color.black.opacity(phoneNumber.isEmpty ? 0.04 : 0.08), radius: 6, x: 0, y: 2)
-        }
-    }
+            .shadow(color: Color.black.opacity(email.isEmpty ? 0.04 : 0.08), radius: 6, x: 0, y: 2)
 
-    private var emailInputGroup: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "envelope.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(Color.auraOnSurfaceVariant)
-            TextField("tu@aura.chat", text: $email)
-                .font(.auraBodyLG)
-                .foregroundStyle(Color.auraOnSurface)
-                .keyboardType(.emailAddress)
-                .autocapitalization(.none)
-                .disableAutocorrection(true)
-            if !email.isEmpty {
-                Button(action: { email = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(Color.auraOutline)
+            // Campo de contraseña
+            HStack(spacing: 8) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color.auraOnSurfaceVariant)
+                SecureField("Contraseña", text: $password)
+                    .font(.auraBodyLG)
+                    .foregroundStyle(Color.auraOnSurface)
+                    .autocapitalization(.none)
+                    .disableAutocorrection(true)
+                if !password.isEmpty {
+                    Button(action: { password = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(Color.auraOutline)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
+            .padding(.horizontal, 12)
+            .frame(height: 56)
+            .frame(maxWidth: .infinity)
+            .background(password.isEmpty ? Color.auraSurfaceContainerLow : Color.auraSurfaceContainerLowest)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(Color.black.opacity(password.isEmpty ? 0.06 : 0.10), lineWidth: 0.5)
+            )
+            .shadow(color: Color.black.opacity(password.isEmpty ? 0.04 : 0.08), radius: 6, x: 0, y: 2)
         }
-        .padding(.horizontal, 12)
-        .frame(height: 56)
-        .frame(maxWidth: .infinity)
-        .background(email.isEmpty ? Color.auraSurfaceContainerLow : Color.auraSurfaceContainerLowest)
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .stroke(Color.black.opacity(email.isEmpty ? 0.06 : 0.10), lineWidth: 0.5)
-        )
-        .shadow(color: Color.black.opacity(email.isEmpty ? 0.04 : 0.08), radius: 6, x: 0, y: 2)
     }
 
     private var biometricsDivider: some View {
@@ -428,7 +487,7 @@ struct LoginView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, .auraGutter)
-        .padding(.vertical,10)
+        .padding(.vertical, 10)
     }
 
     private var footer: some View {
@@ -444,17 +503,18 @@ struct LoginView: View {
     // MARK: - Acciones
 
     private func submit() {
-        let value = authMode == .phone ? phoneNumber : email
-        guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            showToast("Por favor ingresa un \(authMode == .phone ? "teléfono válido" : "correo electrónico")", type: .info)
+        guard !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            showToast("Por favor ingresa correo y contraseña", type: .info)
             return
         }
-        isAuthenticating = true
-        showToast("Enviando código de confirmación…", type: .info)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            self.isAuthenticating = false
-            self.showToast("Identidad confirmada con éxito", type: .success)
-            self.onAuthenticated()
+
+        Task {
+            if isSignUpMode {
+                await authViewModel.signUp(email: email, password: password)
+            } else {
+                await authViewModel.signIn(email: email, password: password)
+            }
         }
     }
 
@@ -465,23 +525,19 @@ struct LoginView: View {
             showToast("Biometría no disponible", type: .error)
             return
         }
-        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Inicia sesión con Face ID") { success, _ in
-            DispatchQueue.main.async {
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Autenticación para Aura Chat") { success, _ in
+            Task { @MainActor in
                 if success {
-                    self.showToast("Identidad confirmada con éxito", type: .success)
-                    self.onAuthenticated()
+                    showToast("Face ID verificado. Usa correo/contraseña para acceder.", type: .success)
                 } else {
-                    self.showToast("Autenticación fallida", type: .error)
+                    showToast("Autenticación fallida", type: .error)
                 }
             }
         }
     }
 
     private func simulateAuth(provider: String) {
-        showToast("Iniciando sesión con \(provider)…", type: .info)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.showToast("Identidad confirmada con éxito", type: .success)
-        }
+        showToast("\(provider) requiere configuración adicional en Firebase Console", type: .info)
     }
 
     private func showToast(_ message: String, type: ToastType) {
@@ -524,4 +580,5 @@ private struct ToastView: View {
 
 #Preview {
     LoginView()
+        .environmentObject(AuthenticationViewModel())
 }
