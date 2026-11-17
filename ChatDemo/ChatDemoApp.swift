@@ -16,6 +16,7 @@ struct ChatDemoApp: App {
     }
 
     @StateObject private var authViewModel = AuthenticationViewModel()
+    @StateObject private var chatViewModel = ChatViewModel()
 
     var body: some Scene {
         WindowGroup {
@@ -23,9 +24,11 @@ struct ChatDemoApp: App {
                 if authViewModel.isAuthenticated {
                     ChatListView()
                         .environmentObject(authViewModel)
+                        .environmentObject(chatViewModel)
                 } else {
                     LoginView()
                         .environmentObject(authViewModel)
+                        .environmentObject(chatViewModel)
                 }
             }
         }

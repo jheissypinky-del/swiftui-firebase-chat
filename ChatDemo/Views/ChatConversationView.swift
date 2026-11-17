@@ -8,48 +8,16 @@
 
 import SwiftUI
 
-// MARK: - Model
-
-struct Message: Identifiable {
-    let id = UUID()
-    let text: String
-    let isOutgoing: Bool
-    let time: String
-    let status: MessageStatus  // solo para salientes
-    let type: MessageType
-    let reaction: String?
-    let isGroup: Bool
-    let senderName: String?    // solo para grupos
-}
-
-enum MessageStatus {
-    case sending, sent, read
-}
-
-enum MessageType {
-    case text, audio, photo
-}
-
 // MARK: - View
 
 struct ChatConversationView: View {
     let contact: String
     @Binding var path: NavigationPath
+    @EnvironmentObject private var chatViewModel: ChatViewModel
 
     @State private var messageText = ""
     @State private var scrollPosition = ScrollPosition(edge: .bottom)
     @FocusState private var isInputFocused: Bool
-
-    // Mensajes de ejemplo coherentes con el diseño de referencia
-    @State private var messages: [Message] = [
-        Message(text: "¡Hola! ¿Listo para la reunión de diseño?", isOutgoing: false, time: "10:12", status: .read, type: .text, reaction: nil, isGroup: false, senderName: nil),
-        Message(text: "Sí, ya estoy terminando los assets.", isOutgoing: true, time: "10:13", status: .sent, type: .text, reaction: nil, isGroup: false, senderName: nil),
-        Message(text: "Perfecto, te espero en el café a las 5pm ☕", isOutgoing: false, time: "10:14", status: .read, type: .text, reaction: nil, isGroup: false, senderName: nil),
-        Message(text: "Audio (0:24) 🎙️", isOutgoing: false, time: "10:16", status: .read, type: .audio, reaction: nil, isGroup: false, senderName: nil),
-        Message(text: "Ya subí los assets actualizados", isOutgoing: false, time: "10:20", status: .read, type: .text, reaction: nil, isGroup: true, senderName: "Elena"),
-        Message(text: "¡Quedó increíble la propuesta de diseño! 🚀", isOutgoing: true, time: "10:22", status: .read, type: .text, reaction: nil, isGroup: false, senderName: nil),
-        Message(text: "Foto adjunta 📸", isOutgoing: false, time: "10:25", status: .read, type: .photo, reaction: nil, isGroup: false, senderName: nil),
-    ]
 
     var body: some View {
         ZStack {
@@ -67,7 +35,7 @@ struct ChatConversationView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 0) {
-                            ForEach(messages) { message in
+                            ForEach(chatViewModel.messages(for: contact)) { message in
                                 MessageBubble(message: message)
                                     .id(message.id)
                             }
@@ -78,7 +46,7 @@ struct ChatConversationView: View {
                         .padding(.top, 8)
                     }
                     .scrollPosition($scrollPosition)
-                    .onChange(of: messages.count) {
+                    .onChange(of: chatViewModel.messages(for: contact).count) {
                         withAnimation(.easeOut(duration: 0.25)) {
                             scrollPosition.scrollTo(edge: .bottom)
                         }
@@ -106,19 +74,10 @@ struct ChatConversationView: View {
     }
 
     private func sendMessage() {
-        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let trimmed = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
 
-        let outgoing = Message(
-            text: messageText.trimmingCharacters(in: .whitespacesAndNewlines),
-            isOutgoing: true,
-            time: "Ahora",
-            status: .sending,
-            type: .text,
-            reaction: nil,
-            isGroup: false,
-            senderName: nil
-        )
-        messages.append(outgoing)
+        chatViewModel.sendMessage(to: contact, text: trimmed)
         messageText = ""
     }
 }
@@ -408,4 +367,5 @@ private struct InputDock: View {
 
 #Preview {
     ChatConversationView(contact: "Sofía Valdés", path: .constant(NavigationPath()))
+        .environmentObject(ChatViewModel())
 }
