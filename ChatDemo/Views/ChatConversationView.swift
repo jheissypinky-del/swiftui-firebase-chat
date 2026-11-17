@@ -34,14 +34,14 @@ enum MessageType {
 
 struct ChatConversationView: View {
     let contact: String
-    var onGoToProfile: (() -> Void) = {}
+    @Binding var path: NavigationPath
 
     @State private var messageText = ""
     @State private var scrollPosition = ScrollPosition(edge: .bottom)
     @FocusState private var isInputFocused: Bool
 
     // Mensajes de ejemplo coherentes con el diseño de referencia
-    private let messages: [Message] = [
+    @State private var messages: [Message] = [
         Message(text: "¡Hola! ¿Listo para la reunión de diseño?", isOutgoing: false, time: "10:12", status: .read, type: .text, reaction: nil, isGroup: false, senderName: nil),
         Message(text: "Sí, ya estoy terminando los assets.", isOutgoing: true, time: "10:13", status: .sent, type: .text, reaction: nil, isGroup: false, senderName: nil),
         Message(text: "Perfecto, te espero en el café a las 5pm ☕", isOutgoing: false, time: "10:14", status: .read, type: .text, reaction: nil, isGroup: false, senderName: nil),
@@ -57,7 +57,11 @@ struct ChatConversationView: View {
 
             VStack(spacing: 0) {
                 // Header de conversación
-                ConversationHeader(contact: contact, onGoToProfile: onGoToProfile)
+                ConversationHeader(
+                    contact: contact,
+                    onGoBack: { path.removeLast() },
+                    onGoToProfile: { path.append(contact) }
+                )
 
                 // Lista de mensajes con input dock anclado al área segura inferior
                 ScrollViewReader { proxy in
@@ -103,6 +107,18 @@ struct ChatConversationView: View {
 
     private func sendMessage() {
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        let outgoing = Message(
+            text: messageText.trimmingCharacters(in: .whitespacesAndNewlines),
+            isOutgoing: true,
+            time: "Ahora",
+            status: .sending,
+            type: .text,
+            reaction: nil,
+            isGroup: false,
+            senderName: nil
+        )
+        messages.append(outgoing)
         messageText = ""
     }
 }
@@ -111,11 +127,12 @@ struct ChatConversationView: View {
 
 private struct ConversationHeader: View {
     let contact: String
+    let onGoBack: () -> Void
     let onGoToProfile: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            Button(action: {}) {
+            Button(action: onGoBack) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Color.auraOnSurface)
@@ -354,7 +371,7 @@ private struct InputDock: View {
                         .padding(.vertical, 10)
                         .focused(isFocused)
                 }
-                .frame(minHeight: 44, maxHeight: 120)
+                .frame(minHeight: 44, maxHeight: 50)
 
                 // Enviar / voz
                 if text.isEmpty {
@@ -390,5 +407,5 @@ private struct InputDock: View {
 }
 
 #Preview {
-    ChatConversationView(contact: "Sofía Valdés")
+    ChatConversationView(contact: "Sofía Valdés", path: .constant(NavigationPath()))
 }

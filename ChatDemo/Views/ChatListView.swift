@@ -70,65 +70,75 @@ struct ChatListView: View {
     ]
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            TabBarView(selectedTab: $selectedTab)
+        TabView(selection: $selectedTab) {
+            NavigationStack(path: $path) {
+                ZStack {
+                    Color.auraBackground.ignoresSafeArea()
 
-            if selectedTab == 0 {
-                NavigationStack(path: $path) {
-                    ZStack {
-                        Color.auraBackground
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            headerView
+                                .padding(.horizontal, .auraGutter)
+                                .padding(.top, 8)
+                                .padding(.vertical, 5)
 
-                        ScrollView {
-                            VStack(spacing: 0) {
-                                headerView
-                                    .padding(.horizontal, .auraGutter)
-                                    .padding(.top, 8)
-                                    .padding(.vertical, 5)
+                            searchField
+                                .padding(.horizontal, .auraGutter)
+                                .padding(.vertical, 5)
 
-                                searchField
-                                    .padding(.horizontal, .auraGutter)
-                                    .padding(.vertical, 5)
+                            filterPills
+                                .padding(.horizontal, .auraGutter)
+                                .padding(.vertical, 5)
 
-                                filterPills
-                                    .padding(.horizontal, .auraGutter)
-                                    .padding(.vertical, 5)
+                            storiesSection
+                                .padding(.horizontal, .auraGutter)
+                                .padding(.vertical, 5)
 
-                                storiesSection
-                                    .padding(.horizontal, .auraGutter)
-                                    .padding(.vertical, 5)
+                            conversationsSection
+                                .padding(.horizontal, .auraGutter)
 
-                                conversationsSection
-                                    .padding(.horizontal, .auraGutter)
-
-                                encryptionFooter
-                                    .padding(.bottom, 100)
-                            }
+                            encryptionFooter
+                                .padding(.bottom, 100)
                         }
+                    }
 
-                        VStack {
+                    VStack {
+                        Spacer()
+                        HStack {
                             Spacer()
-                            HStack {
-                                Spacer()
-                                composeFAB
-                                    .padding(.trailing, 20)
-                                    .padding(.bottom, 90)
-                            }
+                            composeFAB
+                                .padding(.trailing, 20)
+                                .padding(.bottom, 90)
                         }
-                    }
-                    .navigationDestination(for: Chat.self) { chat in
-                        ChatConversationView(contact: chat.name, onGoToProfile: {
-                            path.append(chat.name)
-                        })
-                    }
-                    .navigationDestination(for: String.self) { name in
-                        ProfileView(contact: name)
                     }
                 }
-            } else if selectedTab == 1 {
-                ContactsView()
-            } else {
-                SettingsView()
+                .navigationDestination(for: Chat.self) { chat in
+                    ChatConversationView(contact: chat.name, path: $path)
+                }
+                .navigationDestination(for: String.self) { name in
+                    ProfileView(contact: name, path: $path)
+                }
             }
+            .tabItem {
+                Image(systemName: "message.fill")
+                Text("Chats")
+            }
+            .badge(3)
+            .tag(0)
+
+            ContactsView()
+                .tabItem {
+                    Image(systemName: "person.2.fill")
+                    Text("Contacts")
+                }
+                .tag(1)
+
+            SettingsView()
+                .tabItem {
+                    Image(systemName: "gearshape.fill")
+                    Text("Settings")
+                }
+                .tag(2)
         }
         .tint(.auraPrimary)
     }
@@ -645,90 +655,6 @@ struct ChatRow: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(Color.auraOnSurfaceVariant)
         }
-    }
-}
-
-// MARK: - Tab Bar inferior
-
-private struct TabBarView: View {
-    @Binding var selectedTab: Int
-
-    var body: some View {
-        HStack(spacing: 0) {
-            TabBarItem(
-                icon: "message.fill",
-                title: "Chats",
-                isSelected: selectedTab == 0,
-                badge: 3
-            ) {
-                selectedTab = 0
-            }
-
-            TabBarItem(
-                icon: "person.2.fill",
-                title: "Contacts",
-                isSelected: selectedTab == 1,
-                badge: nil
-            ) {
-                selectedTab = 1
-            }
-
-            TabBarItem(
-                icon: "gearshape.fill",
-                title: "Settings",
-                isSelected: selectedTab == 2,
-                badge: nil
-            ) {
-                selectedTab = 2
-            }
-        }
-        .frame(height: 56)
-        .background(Color.auraSurfaceContainerLowest)
-        .overlay(
-            Rectangle()
-                .frame(height: 0.5)
-                .foregroundStyle(Color.black.opacity(0.04)),
-            alignment: .top
-        )
-        .safeAreaPadding(.bottom)
-    }
-}
-
-private struct TabBarItem: View {
-    let icon: String
-    let title: String
-    let isSelected: Bool
-    let badge: Int?
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 24, weight: .regular))
-                    .foregroundStyle(isSelected ? Color.auraPrimary : Color.auraOnSurfaceVariant)
-                Text(title)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(isSelected ? Color.auraPrimary : Color.auraOnSurfaceVariant)
-            }
-            .frame(maxWidth: .infinity)
-            .overlay(
-                Group {
-                    if let badge {
-                        Text("\(badge)")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
-                            .background(Color.auraPrimary)
-                            .clipShape(Capsule())
-                            .offset(x: -50, y: -9.5)
-                    }
-                },
-                alignment: .topTrailing
-            )
-        }
-        .buttonStyle(.plain)
     }
 }
 

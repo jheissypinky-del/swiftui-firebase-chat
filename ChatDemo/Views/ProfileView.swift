@@ -13,6 +13,7 @@ import UIKit
 
 struct ProfileView: View {
     let contact: String
+    @Binding var path: NavigationPath
 
     @EnvironmentObject private var authViewModel: AuthenticationViewModel
     @State private var notificationsOn = true
@@ -92,7 +93,7 @@ struct ProfileView: View {
 
     private var header: some View {
         HStack(spacing: .auraSpaceXS) {
-            Button(action: {}) {
+            Button(action: { path.removeLast() }) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 26, weight: .regular))
                     .foregroundStyle(Color.auraPrimary)
@@ -739,5 +740,6 @@ private struct ToastView: View {
 // MARK: - Preview
 
 #Preview {
-    ProfileView(contact: "Sofía Valdés")
+    ProfileView(contact: "Sofía Valdés", path: .constant(NavigationPath()))
+        .environmentObject(AuthenticationViewModel())
 }
