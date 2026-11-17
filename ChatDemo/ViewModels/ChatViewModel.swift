@@ -15,6 +15,9 @@ import Combine
 class ChatViewModel: ObservableObject {
     @Published var chats: [Chat] = []
     @Published var messagesByContact: [String: [Message]] = [:]
+    /// Contacto cuya conversación está abierta en pantalla. Evita marcar como
+    /// no leído el mensaje entrante que el usuario ya está viendo.
+    @Published var activeContact: String?
 
     init() {
         setupInitialData()
@@ -101,31 +104,20 @@ class ChatViewModel: ObservableObject {
         messages.append(outgoing)
         messagesByContact[contact] = messages
 
-        // 2. Actualizar el chat en la lista (preview + hora)
-        updateChatPreview(contact: contact, preview: trimmed, time: "Ahora")
+        // 2. El preview pasa a ser el último mensaje de la conversación: el saliente
+        updateChatPreview(contact: contact, preview: trimmed, time: "Ahora", isOutgoing: true)
 
-        // 3. Marcar mensaje saliente como enviado tras un instante
+        // 3. Marcar el mensaje saliente como enviado tras un instante.
+        //    Se muta in-place para conservar su id y no reconstruir la burbuja.
         Task {
             try? await Task.sleep(nanoseconds: 800_000_000) // 0.8 s
-            if var last = messagesByContact[contact]?.last,
-               last.id == outgoing.id {
-                var updated = messagesByContact[contact] ?? []
-                if let idx = updated.firstIndex(where: { $0.id == outgoing.id }) {
-                    updated[idx] = Message(
-                        text: outgoing.text,
-                        isOutgoing: true,
-                        time: outgoing.time,
-                        status: .sent,
-                        type: .text,
-                        reaction: nil,
-                        isGroup: false,
-                        senderName: nil
-                    )
-                    messagesByContact[contact] = updated
-                }
+            if var updated = messagesByContact[contact],
+               let idx = updated.firstIndex(where: { $0.id == outgoing.id }) {
+                updated[idx].status = .sent
+                messagesByContact[contact] = updated
             }
 
-            // 4. Simular mensaje entrante de la otra persona
+            // 4. Simular el mensaje entrante de la otra persona
             try? await Task.sleep(nanoseconds: 1_200_000_000) // 1.2 s más
             let incoming = Message(
                 text: "Recibido: \(trimmed)",
@@ -141,18 +133,45 @@ class ChatViewModel: ObservableObject {
             incomingMessages.append(incoming)
             messagesByContact[contact] = incomingMessages
 
-            // Actualizar preview con la respuesta entrante
-            updateChatPreview(contact: contact, preview: incoming.text, time: "Ahora")
+            // 5. El preview pasa a ser el último mensaje de la conversación: el entrante.
+            //    Si el usuario no está en esta conversación, queda como no leído.
+            let isReading = activeContact == contact
+            updateChatPreview(
+                contact: contact,
+                preview: incoming.text,
+                time: "Ahora",
+                isOutgoing: false,
+                markUnread: !isReading
+            )
         }
     }
 
-    private func updateChatPreview(contact: String, preview: String, time: String) {
+    private func updateChatPreview(
+        contact: String,
+        preview: String,
+        time: String,
+        isOutgoing: Bool,
+        markUnread: Bool = false
+    ) {
         guard let index = chats.firstIndex(where: { $0.name == contact }) else { return }
         var chat = chats[index]
         chat.preview = preview
         chat.time = time
-        chat.isRead = true
+        chat.lastMessageIsOutgoing = isOutgoing
+        chat.isRead = !markUnread
+        chat.unreadCount = markUnread ? chat.unreadCount + 1 : 0
+        chats[index] = chat
+    }
+
+    // MARK: - Conversación activa
+
+    /// Marca qué conversación está en pantalla. Al abrirla se limpia el no leído.
+    func setActiveContact(_ contact: String?) {
+        activeContact = contact
+        guard let contact, let index = chats.firstIndex(where: { $0.name == contact }) else { return }
+        var chat = chats[index]
         chat.unreadCount = 0
+        chat.isRead = true
         chats[index] = chat
     }
 

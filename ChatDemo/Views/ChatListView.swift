@@ -572,12 +572,16 @@ struct ChatRow: View {
                             .truncationMode(.tail)
                     } else {
                         HStack(spacing: 4) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundStyle(Color.auraPrimary)
+                            // El check de enviado solo aparece si el último mensaje es del usuario
+                            if chat.lastMessageIsOutgoing {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundStyle(Color.auraPrimary)
+                            }
                             Text(chat.preview)
                                 .font(.auraBodyMD)
-                                .foregroundStyle(Color.auraOnSurface)
+                                .fontWeight(chat.lastMessageIsOutgoing ? .medium : .semibold)
+                                .foregroundStyle(chat.lastMessageIsOutgoing ? Color.auraOnSurface : Color.auraPrimary)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         }

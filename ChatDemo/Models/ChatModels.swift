@@ -24,7 +24,7 @@ struct Message: Identifiable, Equatable {
     let text: String
     let isOutgoing: Bool
     let time: String
-    let status: MessageStatus  // solo para salientes
+    var status: MessageStatus  // solo para salientes (mutable para no recrear el mensaje y cambiar su id)
     let type: MessageType
     let reaction: String?
     let isGroup: Bool
@@ -49,6 +49,9 @@ struct Chat: Identifiable, Hashable {
     var hasAudio: Bool
     var hasPhoto: Bool
     var verified: Bool
+    /// Indica si el último mensaje de la conversación lo envió el usuario.
+    /// Determina si la fila muestra el check de enviado o el estado no leído.
+    var lastMessageIsOutgoing: Bool = true
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
