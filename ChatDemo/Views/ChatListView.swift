@@ -70,12 +70,14 @@ struct ChatListView: View {
     ]
 
     var body: some View {
-        Group {
+        ZStack(alignment: .bottom) {
+            TabBarView(selectedTab: $selectedTab)
+            Group {
             if selectedTab == 0 {
                 // Chats
                 NavigationStack(path: $path) {
                     ZStack {
-                        Color.auraBackground.ignoresSafeArea()
+                        Color.auraBackground
 
                         ScrollView {
                             VStack(spacing: 0) {
@@ -138,11 +140,8 @@ struct ChatListView: View {
                 SettingsView()
             }
         }
-        .overlay(alignment: .bottom) {
-            TabBarView(selectedTab: $selectedTab)
-        }
-        .tint(.auraPrimary)
     }
+    .tint(.auraPrimary)
 
     // MARK: - Subviews
 
