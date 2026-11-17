@@ -72,47 +72,39 @@ struct ChatListView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             TabBarView(selectedTab: $selectedTab)
-            Group {
+
             if selectedTab == 0 {
-                // Chats
                 NavigationStack(path: $path) {
                     ZStack {
                         Color.auraBackground
 
                         ScrollView {
                             VStack(spacing: 0) {
-                                // Header fijo (simulado dentro del scroll; en producción sería .safeAreaInset)
                                 headerView
                                     .padding(.horizontal, .auraGutter)
                                     .padding(.top, 8)
                                     .padding(.vertical, 5)
 
-                                // Buscador
                                 searchField
                                     .padding(.horizontal, .auraGutter)
                                     .padding(.vertical, 5)
 
-                                // Píldoras de filtro
                                 filterPills
                                     .padding(.horizontal, .auraGutter)
                                     .padding(.vertical, 5)
 
-                                // Historias activas
                                 storiesSection
                                     .padding(.horizontal, .auraGutter)
                                     .padding(.vertical, 5)
 
-                                // Conversaciones
                                 conversationsSection
                                     .padding(.horizontal, .auraGutter)
 
-                                // Pie de cifrado
                                 encryptionFooter
-                                    .padding(.bottom, 100) // espacio para el FAB y tab bar
+                                    .padding(.bottom, 100)
                             }
                         }
 
-                        // FAB flotante (nueva conversación)
                         VStack {
                             Spacer()
                             HStack {
@@ -133,15 +125,13 @@ struct ChatListView: View {
                     }
                 }
             } else if selectedTab == 1 {
-                // Contacts (placeholder)
                 ContactsView()
             } else {
-                // Settings
                 SettingsView()
             }
         }
+        .tint(.auraPrimary)
     }
-    .tint(.auraPrimary)
 
     // MARK: - Subviews
 
