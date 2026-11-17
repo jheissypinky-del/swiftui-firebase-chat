@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 // MARK: - View
 
@@ -274,13 +275,13 @@ struct ChatListView: View {
             }
 
             LazyVStack(spacing: 0) {
-                ForEach(chatViewModel.chats) { chat in
+                ForEach(chatViewModel.chats, id: \.id) { chat in
                     ChatRow(chat: chat)
                         .contentShape(Rectangle())
                         .onTapGesture {
                             path.append(chat)
                         }
-                    if chat.id != chats.last?.id {
+                    if chat.id != chatViewModel.chats.last?.id {
                         Divider()
                             .padding(.leading, 76)
                     }
