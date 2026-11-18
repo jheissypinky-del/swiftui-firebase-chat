@@ -430,13 +430,41 @@ struct StoryPill: View {
 }
 
 struct ChatRow: View {
-    let chat: Chat
+    // Los valores visibles se guardan como propiedades simples (no como el modelo
+    // Chat) para que SwiftUI re-renderice la fila cuando cambia el preview.
+    // Si se guardara el Chat entero y su Equals solo comparara el id, la fila
+    // se consideraría sin cambios y el preview no se actualizaría.
+    let name: String
+    let preview: String
+    let time: String
+    let avatarURL: String
+    let unreadCount: Int
+    let isRead: Bool
+    let isGroup: Bool
+    let hasAudio: Bool
+    let hasPhoto: Bool
+    let verified: Bool
+    let lastMessageIsOutgoing: Bool
+
+    init(chat: Chat) {
+        name = chat.name
+        preview = chat.preview
+        time = chat.time
+        avatarURL = chat.avatarURL
+        unreadCount = chat.unreadCount
+        isRead = chat.isRead
+        isGroup = chat.isGroup
+        hasAudio = chat.hasAudio
+        hasPhoto = chat.hasPhoto
+        verified = chat.verified
+        lastMessageIsOutgoing = chat.lastMessageIsOutgoing
+    }
 
     var body: some View {
         HStack(spacing: .auraSpaceMD) {
             // Avatar
             ZStack(alignment: .bottomTrailing) {
-                if chat.isGroup {
+                if isGroup {
                     // Stacked avatars para grupos
                     ZStack {
                         // Back avatar
@@ -467,7 +495,7 @@ struct ChatRow: View {
                             .clipShape(Circle())
                             .offset(x: 14, y: 14)
                         // Badge verificado
-                        if chat.verified {
+                        if verified {
                             Circle()
                                 .fill(Color.auraPrimary)
                                 .frame(width: 20, height: 20)
@@ -485,13 +513,13 @@ struct ChatRow: View {
                 } else {
                     // Avatar individual
                     Group {
-                        if chat.avatarURL.isEmpty {
-                            avatarPlaceholder(for: chat.name)
+                        if avatarURL.isEmpty {
+                            avatarPlaceholder(for: name)
                         } else {
-                            AsyncImage(url: URL(string: chat.avatarURL)) { image in
+                            AsyncImage(url: URL(string: avatarURL)) { image in
                                 image.resizable().aspectRatio(contentMode: .fill)
                             } placeholder: {
-                                avatarPlaceholder(for: chat.name)
+                                avatarPlaceholder(for: name)
                             }
                         }
                     }
@@ -511,14 +539,14 @@ struct ChatRow: View {
                 // Nombre + hora
                 HStack(spacing: 6) {
                     Group {
-                        if chat.isGroup {
+                        if isGroup {
                             HStack(spacing: 4) {
-                                Text(chat.name)
+                                Text(name)
                                 Image(systemName: "checkmark.seal.fill")
                                     .font(.system(size: 13, weight: .bold))
                             }
                         } else {
-                            Text(chat.name)
+                            Text(name)
                         }
                     }
                     .font(.auraHeadlineSM)
@@ -528,15 +556,15 @@ struct ChatRow: View {
 
                     Spacer(minLength: 8)
 
-                    Text(chat.time)
+                    Text(time)
                         .font(.auraLabelSM)
                         .fontWeight(.semibold)
-                        .foregroundStyle(chat.isRead ? Color.auraOutline : Color.auraPrimary)
+                        .foregroundStyle(isRead ? Color.auraOutline : Color.auraPrimary)
                 }
 
                 // Preview
                 HStack(spacing: 6) {
-                    if chat.hasAudio {
+                    if hasAudio {
                         Image(systemName: "mic.fill")
                             .font(.system(size: 14))
                             .foregroundStyle(Color.auraPrimary)
@@ -554,17 +582,17 @@ struct ChatRow: View {
                             }
                         }
                         .frame(height: 12)
-                    } else if chat.hasPhoto {
+                    } else if hasPhoto {
                         Image(systemName: "photo")
                             .font(.system(size: 16))
                             .foregroundStyle(Color.auraOnSurfaceVariant)
-                        Text(chat.preview)
+                        Text(preview)
                             .font(.auraBodyMD)
                             .foregroundStyle(Color.auraOnSurfaceVariant)
                             .lineLimit(1)
                             .truncationMode(.tail)
-                    } else if chat.isGroup {
-                        Text(chat.preview)
+                    } else if isGroup {
+                        Text(preview)
                             .font(.auraBodyMD)
                             .fontWeight(.medium)
                             .foregroundStyle(Color.auraOnSurface)
@@ -573,23 +601,23 @@ struct ChatRow: View {
                     } else {
                         HStack(spacing: 4) {
                             // El check de enviado solo aparece si el último mensaje es del usuario
-                            if chat.lastMessageIsOutgoing {
+                            if lastMessageIsOutgoing {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 13, weight: .bold))
                                     .foregroundStyle(Color.auraPrimary)
                             }
-                            Text(chat.preview)
+                            Text(preview)
                                 .font(.auraBodyMD)
-                                .fontWeight(chat.lastMessageIsOutgoing ? .medium : .semibold)
-                                .foregroundStyle(chat.lastMessageIsOutgoing ? Color.auraOnSurface : Color.auraPrimary)
+                                .fontWeight(lastMessageIsOutgoing ? .medium : .semibold)
+                                .foregroundStyle(lastMessageIsOutgoing ? Color.auraOnSurface : Color.auraPrimary)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         }
                     }
 
                     // Estado de lectura o badge no leídos
-                    if chat.unreadCount > 0 {
-                        Text("\(chat.unreadCount)")
+                    if unreadCount > 0 {
+                        Text("\(unreadCount)")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 5)
@@ -597,7 +625,7 @@ struct ChatRow: View {
                             .background(Color.auraPrimary)
                             .clipShape(Capsule())
                             .shadow(color: Color.auraPrimary.opacity(0.35), radius: 4, x: 0, y: 2)
-                    } else if chat.isRead && !chat.hasAudio && !chat.hasPhoto {
+                    } else if isRead && !hasAudio && !hasPhoto {
                         Text("Leído")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(Color.auraOutline)

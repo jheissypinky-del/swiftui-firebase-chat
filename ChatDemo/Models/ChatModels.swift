@@ -11,7 +11,7 @@ import SwiftUI
 
 // MARK: - Message
 
-enum MessageStatus {
+enum MessageStatus: Equatable {
     case sending, sent, read
 }
 
@@ -30,8 +30,10 @@ struct Message: Identifiable, Equatable {
     let isGroup: Bool
     let senderName: String?    // solo para grupos
 
+    // La igualdad compara también el estado: si solo comparara el id,
+    // SwiftUI omitiría el re-render de la burbuja al pasar de .sending a .sent.
     static func == (lhs: Message, rhs: Message) -> Bool {
-        lhs.id == rhs.id
+        lhs.id == rhs.id && lhs.status == rhs.status
     }
 }
 
@@ -50,15 +52,24 @@ struct Chat: Identifiable, Hashable {
     var hasPhoto: Bool
     var verified: Bool
     /// Indica si el último mensaje de la conversación lo envió el usuario.
-    /// Determina si la fila muestra el check de enviado o el estado no leído.
+    /// Determina si la fila muestra el check de enviado o el estado entrante.
     var lastMessageIsOutgoing: Bool = true
 
+    // El hash se mantiene en el id para que el chat sea estable dentro del
+    // NavigationPath, pero la igualdad compara también el contenido visible:
+    // si solo comparara el id, SwiftUI omitiría el re-render de la fila y el
+    // preview de la lista nunca se actualizaría al enviar un mensaje.
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 
     static func == (lhs: Chat, rhs: Chat) -> Bool {
         lhs.id == rhs.id
+            && lhs.preview == rhs.preview
+            && lhs.time == rhs.time
+            && lhs.unreadCount == rhs.unreadCount
+            && lhs.isRead == rhs.isRead
+            && lhs.lastMessageIsOutgoing == rhs.lastMessageIsOutgoing
     }
 }
 

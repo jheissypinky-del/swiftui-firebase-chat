@@ -15,9 +15,15 @@ import Combine
 class ChatViewModel: ObservableObject {
     @Published var chats: [Chat] = []
     @Published var messagesByContact: [String: [Message]] = [:]
-    /// Contacto cuya conversación está abierta en pantalla. Evita marcar como
-    /// no leído el mensaje entrante que el usuario ya está viendo.
-    @Published var activeContact: String?
+
+    /// Respuestas simuladas de la otra persona (demo). Se eligen de forma rotativa.
+    private let simulatedReplies = [
+        "¡Entendido!",
+        "Perfecto 👍",
+        "Claro, te aviso",
+        "Recibido, gracias 😊",
+        "De acuerdo, gracias!"
+    ]
 
     init() {
         setupInitialData()
@@ -120,7 +126,7 @@ class ChatViewModel: ObservableObject {
             // 4. Simular el mensaje entrante de la otra persona
             try? await Task.sleep(nanoseconds: 1_200_000_000) // 1.2 s más
             let incoming = Message(
-                text: "Recibido: \(trimmed)",
+                text: simulatedReply(for: contact),
                 isOutgoing: false,
                 time: "Ahora",
                 status: .read,
@@ -133,45 +139,35 @@ class ChatViewModel: ObservableObject {
             incomingMessages.append(incoming)
             messagesByContact[contact] = incomingMessages
 
-            // 5. El preview pasa a ser el último mensaje de la conversación: el entrante.
-            //    Si el usuario no está en esta conversación, queda como no leído.
-            let isReading = activeContact == contact
+            // 5. El preview pasa a ser el último mensaje de la conversación: el entrante
             updateChatPreview(
                 contact: contact,
                 preview: incoming.text,
                 time: "Ahora",
-                isOutgoing: false,
-                markUnread: !isReading
+                isOutgoing: false
             )
         }
+    }
+
+    /// Elige la respuesta simulada de forma rotativa.
+    private func simulatedReply(for contact: String) -> String {
+        let index = messages(for: contact).count % simulatedReplies.count
+        return simulatedReplies[index]
     }
 
     private func updateChatPreview(
         contact: String,
         preview: String,
         time: String,
-        isOutgoing: Bool,
-        markUnread: Bool = false
+        isOutgoing: Bool
     ) {
         guard let index = chats.firstIndex(where: { $0.name == contact }) else { return }
         var chat = chats[index]
         chat.preview = preview
         chat.time = time
         chat.lastMessageIsOutgoing = isOutgoing
-        chat.isRead = !markUnread
-        chat.unreadCount = markUnread ? chat.unreadCount + 1 : 0
-        chats[index] = chat
-    }
-
-    // MARK: - Conversación activa
-
-    /// Marca qué conversación está en pantalla. Al abrirla se limpia el no leído.
-    func setActiveContact(_ contact: String?) {
-        activeContact = contact
-        guard let contact, let index = chats.firstIndex(where: { $0.name == contact }) else { return }
-        var chat = chats[index]
-        chat.unreadCount = 0
         chat.isRead = true
+        chat.unreadCount = 0
         chats[index] = chat
     }
 

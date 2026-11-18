@@ -71,12 +71,6 @@ struct ChatConversationView: View {
         .navigationBarBackButtonHidden()
         .toolbar(.hidden, for: .navigationBar)
         .tint(.auraPrimary)
-        .onAppear {
-            chatViewModel.setActiveContact(contact)
-        }
-        .onDisappear {
-            chatViewModel.setActiveContact(nil)
-        }
     }
 
     private func sendMessage() {
